@@ -1,5 +1,5 @@
 import React, { Component } from 'react';
-import { FlatList, SectionList, StyleSheet, Text, View, ImageBackground, Image } from 'react-native';
+import { FlatList, SectionList, StyleSheet, Text, View, ImageBackground, Image, RefreshControl} from 'react-native';
 import LinearGradient from 'react-native-linear-gradient'
 
 var Dimensions = require('Dimensions');
@@ -31,16 +31,16 @@ export default class FlatListBasics extends Component {
                     _from: 'yjk',
                     appId: '101',
                     appVersion: '4.16.0',
-                    pageIndex: '1',
-                    sign: 'ac47d9470d3e28b342ed5e4914a374d6',
-                    token: 'c340e151608381f8866ee1cd09f748e9',
+                    pageIndex: 1,
+                    sign: 'b0ab882b4a16e020c09521cb14a54e3c',
+                    token: 'a0750455858137606627b57e1ea3a2a9',
                     userId: 'f0121d64-31cb-4d1d-ab50-6e32fa6ffc73',
-                    videoLiveStatus: '2'
+                    videoLiveStatus: 2
                 })
             });
 
             let responseJson = await response.json();
-            
+
             this.setState( previousState => {
                 return { list: responseJson.data.list};
             })
@@ -51,30 +51,35 @@ export default class FlatListBasics extends Component {
     }
 
   render(){
-      return (
+
+    var mySections = [];
+    for(let i in this.state.list){
+        mySections.push({data: [this.state.list[i]]});
+    }
+
+    return (
         <View style = {styles.container}>
         <SectionList
-        //   sections = {
-        //       [
-        //           {data: ['Wang']},
-        //           {data: ['Jia']},
-        //       ]
-        //   }
-          sections = {this.state.list}
-          renderItem={({item})=> <ItemView style={styles.item}></ItemView>}
+
+          sections = {mySections}
+          renderItem={({item})=> <ItemView item = {item} style={styles.item}></ItemView>}
           renderSectionFooter = {({section}) => <View style={styles.sectionHeader}></View>}
         >
         </SectionList>
       </View>
-      );
+    );
   }
 }
 
 class ItemView extends Component{
+    constructor(props){ //？？？？？ 什么鬼意思
+        super(props) 
+    }
+
     render(){
         return (
             <View style = {this.props.style}>
-                <ImageBackground source={{uri: 'http://prod.image.ihaozhuo.com/2017/12/04/15123819528542152.jpg'}} style={styles.itemImage}>
+                <ImageBackground source={{uri: this.props.item.subscribeImageUrl}} style={styles.itemImage}>
 
                     <LinearGradient start = {{x:0, y:0.5}} end = {{x:1, y:0.5}} colors = {['#46DB32','#18B56C']} style={styles.itemLiveView}>
                         <Image source = {require('./ImageSource/live_status.gif')} style = {{marginRight: 4, width:10, height: 10}}></Image>
@@ -83,11 +88,11 @@ class ItemView extends Component{
 
                     <LinearGradient style={styles.itemCoverView} colors = {['rgba(0,0,0,0)','rgba(0,0,0,0.3)']}>
                         <Image source = {require('./ImageSource/live_icon_audience.png')} style = {{marginRight: 4}}></Image>
-                        <Text style = {{color: "#FFFFFF", marginRight: 15, fontSize: 12}}>4382</Text>
+                        <Text style = {{color: "#FFFFFF", marginRight: 15, fontSize: 12}}>{this.props.item.peopleNumber}</Text>
                     </LinearGradient>
 
                 </ImageBackground>
-                <Text style={styles.itemTitleLabel}>浙一医院主任医师: 听王医生讲悄悄话</Text>
+                <Text style={styles.itemTitleLabel}>{this.props.item.videoLiveName}</Text>
             </View>
         )
     }
