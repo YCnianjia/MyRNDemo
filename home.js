@@ -7,9 +7,11 @@ export default class HomePage extends Component{
         return (
             <NavigatorIOS initialRoute={{
                 component: MyScene,
-                 title: "首页"
+                title: '首页',
+                backButtonTitle: ' '
               }}
               style = {{flex: 1}}
+              tintColor = '#2FC27D'
               >
             </NavigatorIOS>
         );
