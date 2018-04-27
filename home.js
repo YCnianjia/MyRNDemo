@@ -1,5 +1,5 @@
 import React, { Component } from 'react';
-import { Text, NavigatorIOS, View, TouchableHighlight } from 'react-native';
+import { Text, NavigatorIOS, View, TouchableHighlight, ScrollView } from 'react-native';
 import LiveList from './liveList'
 
 export default class HomePage extends Component{
@@ -28,11 +28,11 @@ class MyScene extends Component{
 
     render(){
         return(
-          <View style = {{flex:1, alignItems:'center' , justifyContent: 'center', flexDirection: 'column'}}>
+          <ScrollView automaticallyAdjustContentInsets = {false} contentContainerStyle = {{flex:1, alignItems:'center' , justifyContent: 'center', flexDirection: 'column'}}>
             <TouchableHighlight onPress={this.onForward.bind(this)}>
               <Text>点击进入直播列表</Text>
             </TouchableHighlight>
-          </View>
+          </ScrollView>
         )
       }
 }

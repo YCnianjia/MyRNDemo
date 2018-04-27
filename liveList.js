@@ -1,9 +1,11 @@
 import React, { Component } from 'react';
-import { FlatList, SectionList, StyleSheet, Text, View, ImageBackground, Image, RefreshControl} from 'react-native';
+import {FlatList, SectionList, StyleSheet, Text, View, ImageBackground, Image, RefreshControl, ActivityIndicator} from 'react-native';
+import { SortData, YJKSortBody } from "./RequestHelp";
 import LinearGradient from 'react-native-linear-gradient'
 
 var Dimensions = require('Dimensions');
 var ScreenWidth = Dimensions.get('window').width;
+var ScreenHeight = Dimensions.get('window').height;
 
 export default class FlatListBasics extends Component {
 
@@ -11,7 +13,12 @@ export default class FlatListBasics extends Component {
         super(props)
 
         this.state = {
-            list: []
+            list: [],
+            isRefreshing: false,
+            isEmptyData: true,
+            isLoadMore: false,
+            isLoadAll:false,
+            page: 1,
         }
     }
 
@@ -21,33 +28,87 @@ export default class FlatListBasics extends Component {
 
     async requestData(){
         try{
+            var MyBody = JSON.stringify(YJKSortBody({
+                appVersion: '4.16.0',
+                pageIndex: this.state.page,
+                token: 'a0750455858137606627b57e1ea3a2a9',
+                userId: 'f0121d64-31cb-4d1d-ab50-6e32fa6ffc73',
+                videoLiveStatus: 2
+            }))
+
+            console.log(MyBody)
+
             let response = await fetch('http://restapi-test.ihaozhuo.com:82/video/live/v4120/appList',{
                 method: 'POST',
                 headers: {
                     'Accept': 'application/json; text/html',
                     'Content-Type': 'application/json; charset=utf-8',
                 },
-                body: JSON.stringify({
-                    _from: 'yjk',
-                    appId: '101',
-                    appVersion: '4.16.0',
-                    pageIndex: 1,
-                    sign: 'b0ab882b4a16e020c09521cb14a54e3c',
-                    token: 'a0750455858137606627b57e1ea3a2a9',
-                    userId: 'f0121d64-31cb-4d1d-ab50-6e32fa6ffc73',
-                    videoLiveStatus: 2
-                })
+                body: MyBody
             });
 
             let responseJson = await response.json();
+            var requestData = []
+            if (typeof (responseJson.data) == "object" && responseJson.data.list.length > 0){
+                requestData = responseJson.data.list
+            }
 
-            this.setState( previousState => {
-                return { list: responseJson.data.list};
+            if (this.state.page != 1){
+                this.state.list = this.state.list.concat(requestData)
+            }else{
+                this.state.list = requestData
+            }
+
+            //不需要加载更多
+            if (requestData.length < 10){
+                this.state.isLoadMore =  false
+                this.state.isLoadAll = true
+            }else{
+                this.state.isLoadMore =  true
+                this.state.isLoadAll = false
+            }
+
+            if (this.state.list.length > 0){
+                this.state.isEmptyData = false
+            }else{
+                this.state.isEmptyData = true
+            }
+
+            //刷新界面
+            this.setState(previousState => {
+                return {list: this.state.list,
+                        isRefreshing: false,
+                        isLoadMore: this.state.isLoadMore,
+                        isEmptyData: this.state.isEmptyData};
             })
+
             console.log(responseJson)
         }catch(error){
             console.error(error);
         }
+    }
+
+    _onRefresh(){
+
+        this.setState(previousState => {
+            return {isRefreshing: true};
+        })
+
+        this.state.page = 1
+        // alert(this.state.page)
+        this.requestData()
+    }
+
+    _loadMore(){
+        if (this.state.isRefreshing == false && !this.state.isLoadAll) {
+            this.setState(previousState => {
+                return {isLoadMore: true};
+            })
+            // 立即更改属性值 page+1
+            this.state.page = this.state.page + 1
+            // 网络请求数据
+            this.requestData();
+          }
     }
 
   render(){
@@ -58,12 +119,31 @@ export default class FlatListBasics extends Component {
     }
 
     return (
+
+        this.state.isEmptyData ? <Text style = {styles.empty} >当前没有直播，请观看精彩回放哦～</Text> :
         <View style = {styles.container}>
         <SectionList
+          refreshControl={
+            <RefreshControl
+              refreshing={this.state.isRefreshing}
+              onRefresh={this._onRefresh.bind(this)}
+              tintColor="#ff0000"
+              title="Loading..."
+              titleColor="#00ff00"
+              colors={['#ff0000', '#00ff00', '#0000ff']}
+              progressBackgroundColor="#ffff00"
+            />
+          }
 
           sections = {mySections}
           renderItem={({item})=> <ItemView item = {item} style={styles.item}></ItemView>}
           renderSectionFooter = {({section}) => <View style={styles.sectionHeader}></View>}
+          onEndReached={this._loadMore.bind(this)}
+          onEndReachedThreshold={0}
+
+          ListFooterComponent =  {
+            <LoadMoreFooter isLoadAll={!this.state.isLoadMore} />
+        }
         >
         </SectionList>
       </View>
@@ -72,7 +152,7 @@ export default class FlatListBasics extends Component {
 }
 
 class ItemView extends Component{
-    constructor(props){ //？？？？？ 什么鬼意思
+    constructor(props){
         super(props) 
     }
 
@@ -98,10 +178,36 @@ class ItemView extends Component{
     }
 }
 
+class LoadMoreFooter extends Component{
+    constructor(props){
+        super(props) 
+        this.props.isLoadAll = false
+    }
+    render(){
+        return (
+            <View style={styles.footer}>
+                  <ActivityIndicator animating={!this.props.isLoadAll} />
+                  <Text style={styles.footerTitle}>{this.props.isLoadAll ? '没有更多直播啦，可以先看看其他视频哦～' : '正在加载更多…'}</Text>
+              </View>
+        )
+    }
+}
+
 const styles = StyleSheet.create({
   container:{
       flex: 1,
       backgroundColor: '#F4F4F4',
+      marginTop: 64,
+  },
+
+  empty:{
+    position:'absolute', 
+    left: 0,
+    top: (ScreenHeight - 40)/2.0,
+    width: ScreenWidth,
+    height: 40,
+    color: '#ACB0AD',
+    textAlign:'center',
   },
 
   sectionHeader:{
@@ -152,4 +258,17 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     borderRadius: 3,
   },
+
+  footer: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    height: 76.5,
+  },
+
+  footerTitle: {
+    fontSize: 12,
+    color: '#707773'
+  },
+
 })
