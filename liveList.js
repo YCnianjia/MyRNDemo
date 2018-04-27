@@ -1,5 +1,5 @@
 import React, { Component } from 'react';
-import {FlatList, SectionList, StyleSheet, Text, View, ImageBackground, Image, RefreshControl, ActivityIndicator} from 'react-native';
+import {FlatList, SectionList, StyleSheet, Text, View, ImageBackground, Image, RefreshControl, ActivityIndicator, TouchableHighlight, TouchableOpacity} from 'react-native';
 import { SortData, YJKSortBody } from "./RequestHelp";
 import LinearGradient from 'react-native-linear-gradient'
 
@@ -111,6 +111,14 @@ export default class FlatListBasics extends Component {
           }
     }
 
+    _click(){
+        alert('aaaa')
+    }
+
+    _clickWithData(model){
+        alert(model.videoLiveName)
+    }
+
   render(){
 
     var mySections = [];
@@ -136,11 +144,10 @@ export default class FlatListBasics extends Component {
           }
 
           sections = {mySections}
-          renderItem={({item})=> <ItemView item = {item} style={styles.item}></ItemView>}
+          renderItem={({item})=> <ItemView item = {item} style={styles.item} clickEvent = {this._click} clickWithData = {this._clickWithData}></ItemView>}
           renderSectionFooter = {({section}) => <View style={styles.sectionHeader}></View>}
           onEndReached={this._loadMore.bind(this)}
           onEndReachedThreshold={0}
-
           ListFooterComponent =  {
             <LoadMoreFooter isLoadAll={!this.state.isLoadMore} />
         }
@@ -153,12 +160,16 @@ export default class FlatListBasics extends Component {
 
 class ItemView extends Component{
     constructor(props){
-        super(props) 
+        super(props)
+    }
+
+    _myClick(){
+        this.props.clickWithData(this.props.item)
     }
 
     render(){
         return (
-            <View style = {this.props.style}>
+            <TouchableOpacity style = {this.props.style} onPress = {()=>this._myClick()}>
                 <ImageBackground source={{uri: this.props.item.subscribeImageUrl}} style={styles.itemImage}>
 
                     <LinearGradient start = {{x:0, y:0.5}} end = {{x:1, y:0.5}} colors = {['#46DB32','#18B56C']} style={styles.itemLiveView}>
@@ -173,7 +184,7 @@ class ItemView extends Component{
 
                 </ImageBackground>
                 <Text style={styles.itemTitleLabel}>{this.props.item.videoLiveName}</Text>
-            </View>
+            </TouchableOpacity>
         )
     }
 }
